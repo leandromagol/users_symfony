@@ -35,7 +35,7 @@ class UserController extends AbstractFOSRestController
     public function index(): Response
     {
         $user = $this->userRepository->findAll();
-        $view = $this->view(['success' => true, 'data' => $user], Response::HTTP_OK);
+        $view = $this->view(['success' => true,'message'=>'User retrieved successfully','data' => $user], Response::HTTP_OK);
         return $this->handleView($view);
     }
 
@@ -61,7 +61,7 @@ class UserController extends AbstractFOSRestController
         if (!$user) {
             throw new ResourceNotFoundException("User not found");
         }
-        $view = $this->view($user, Response::HTTP_OK, []);
+        $view = $this->view(['success'=>true,'message'=>'User retrieved successfully','data'=>$user], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 
@@ -81,7 +81,22 @@ class UserController extends AbstractFOSRestController
         $user->setEmail($userUpdated->getEmail());
         $user->setPassword($userUpdated->getPassword());
         $this->em->flush();
-        $view = $this->view($user, Response::HTTP_OK, []);
+        $view = $this->view(['success'=>true,'message'=>'User updated successfully','data'=>$user], Response::HTTP_OK, []);
+        return $this->handleView($view);
+    }
+
+    /**
+     * @Route("/user/{id}", name="user_delete",methods={"DELETE"})
+     */
+    public function delete($id)
+    {
+        $user = $this->userRepository->find($id);
+        if (!$user) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        $this->em->remove($user);
+        $this->em->flush();
+        $view = $this->view(['success' => true, 'message' => 'User removed successfully'], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 }
