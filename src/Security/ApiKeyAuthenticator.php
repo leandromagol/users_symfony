@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Helpers\JwtVerify;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,7 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
 {
     public function supports(Request $request): ?bool
     {
-        return  $request->getPathInfo() !== '/login';
+        return  $request->getPathInfo() !== '/api/v1/login';
     }
 
     public function authenticate(Request $request): PassportInterface

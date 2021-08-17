@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\ApiToken;
 use App\Repository\UserRepository;
+use App\Services\ApiTokenFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,11 +21,13 @@ class DefaultController extends AbstractController
 {
     private $userRepository;
     private $em;
-    public function __construct(UserRepository $userRepository,EntityManagerInterface $em)
+
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $em)
     {
         $this->userRepository = $userRepository;
         $this->em = $em;
     }
+
     /**
      * @Route("/default", name="default")
      */
@@ -34,32 +38,6 @@ class DefaultController extends AbstractController
             'path' => 'src/Controller/DefaultController.php',
         ]);
     }
-    /**
-     * @Route("/login", name="login", methods={"POST"})
-     */
-        public function login(Request $request,UserPasswordHasherInterface $hasher){
-        $user = $this->getUser();
 
-        $input = $request->toArray();
 
-        $user = $this->userRepository->findOneBy(['email'=>$input['username']]);
-        if (empty($user)){
-            return new JsonResponse('user or password is incorrect',Response::HTTP_NOT_FOUND);
-        }
-        if (!$hasher->isPasswordValid($user,$input['password'])){
-            return new JsonResponse('user or password is incorrect',Response::HTTP_NOT_FOUND);
-        }
-        $now = new \DateTime('NOW');
-        $expires_at = $now->modify('+1 day')->format('Y-m-d H:i:s');
-        $token = JWT::encode(['username'=>$user->getEmail(),'expires_at'=> $expires_at],$_ENV['APP_SECRET']);
-        $user->setApiToken($token);
-        $this->em->flush();
-        return $this->json([
-            // The getUserIdentifier() method was introduced in Symfony 5.3.
-            // In previous versions it was called getUsername()
-            'username' => $user->getUserIdentifier(),
-            'roles' => $user->getRoles(),
-            'access_token'=>$token
-        ]);
-    }
 }
