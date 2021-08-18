@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Form\Type\UserType;
 use App\Helpers\Factories\UserFactory;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -35,7 +36,7 @@ class UserController extends AbstractFOSRestController
     public function index(): Response
     {
         $user = $this->userRepository->findAll();
-        $view = $this->view(['success' => true,'message'=>'User retrieved successfully','data' => $user], Response::HTTP_OK);
+        $view = $this->view(['success' => true, 'message' => 'User retrieved successfully', 'data' => $user], Response::HTTP_OK);
         return $this->handleView($view);
     }
 
@@ -44,7 +45,18 @@ class UserController extends AbstractFOSRestController
      */
     public function store(Request $request): Response
     {
-        $body = $request->toArray();
+        $form = $this->createForm(UserType::class);
+        $body = json_decode($request->getContent(), true);
+
+        $form->submit($body);
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $view = $this->view(['success' => false, 'data' => [
+                'message' => 'Error on save user',
+                'data' => $form]
+            ], Response::HTTP_BAD_REQUEST);
+            return $this->handleView($view);
+        }
+
         $user = $this->userFactory->BuildUser($body);
         $this->em->persist($user);
         $this->em->flush();
@@ -61,12 +73,13 @@ class UserController extends AbstractFOSRestController
         if (!$user) {
             throw new ResourceNotFoundException("User not found");
         }
-        $view = $this->view(['success'=>true,'message'=>'User retrieved successfully','data'=>$user], Response::HTTP_OK, []);
+        $view = $this->view(['success' => true, 'message' => 'User retrieved successfully', 'data' => $user], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 
     /**
      * @Route("/user/{id}", name="user_update",methods={"PUT"})
+     * @throws \Exception
      */
     public function update($id, Request $request): Response
     {
@@ -74,14 +87,23 @@ class UserController extends AbstractFOSRestController
         if (!$user) {
             throw new ResourceNotFoundException("User not found");
         }
-        $body = $request->toArray();
+        $form = $this->createForm(UserType::class, $user);
+        $body = json_decode($request->getContent(), true);
 
+        $form->submit($body);
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            $view = $this->view(['success' => false, 'data' => [
+                'message' => 'Error on save user',
+                'data' => $form]
+            ], Response::HTTP_BAD_REQUEST);
+            return $this->handleView($view);
+        }
         $userUpdated = $this->userFactory->BuildUser($body);
-        $user->setRoles($userUpdated->getRoles());
+        if($userUpdated->getRoles())$user->setRoles($userUpdated->getRoles());
         $user->setEmail($userUpdated->getEmail());
         $user->setPassword($userUpdated->getPassword());
         $this->em->flush();
-        $view = $this->view(['success'=>true,'message'=>'User updated successfully','data'=>$user], Response::HTTP_OK, []);
+        $view = $this->view(['success' => true, 'message' => 'User updated successfully', 'data' => $user], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 
