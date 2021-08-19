@@ -15,7 +15,7 @@ use Firebase\JWT\JWT;
             if (strtotime($now) > strtotime($decode->expires_at)){
                 return ['success'=>false,'status' => 'expired'];
             }
-            return ['success'=>true,'status' => 'ok'];
+            return ['success'=>true,'status' => 'ok','api_code'=>$decode->api_token];
         }catch (\Exception $exception){
             return ['success'=>false,'status' => 'invalid'];
         }

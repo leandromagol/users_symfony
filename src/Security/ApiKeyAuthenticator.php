@@ -37,7 +37,7 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
         if (!$verify['success']){
             throw new CustomUserMessageAuthenticationException('API token is'. $verify['status']);
         }
-        return new SelfValidatingPassport(new UserBadge($apiToken));
+        return new SelfValidatingPassport(new UserBadge($verify['api_code']));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response

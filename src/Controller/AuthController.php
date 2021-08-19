@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Uid\Uuid;
+
 /**
  * @Route("/api/v1")
  */
@@ -31,6 +33,7 @@ class AuthController extends AbstractController
      */
     public function login(Request $request, UserPasswordHasherInterface $hasher)
     {
+
         $input = $request->toArray();
 
         if (!isset($input['username']) || !isset($input['password'])){
@@ -44,9 +47,10 @@ class AuthController extends AbstractController
             return new JsonResponse('user or password is incorrect', Response::HTTP_NOT_FOUND);
         }
         $now = new \DateTime('NOW');
+        $uuid = Uuid::v4();
         $expires_at = new \DateTimeImmutable($now->modify('+60 minutes')->format('Y-m-d H:i:s'));
-        $token = JWT::encode(['username' => $user->getEmail(), 'expires_at' => $expires_at->format('Y-m-d H:i:s')], $_ENV['APP_SECRET']);
-        $user->setApiToken($token);
+        $token = JWT::encode(['username' => $user->getEmail(), 'expires_at' => $expires_at->format('Y-m-d H:i:s'),'api_token'=>$uuid->jsonSerialize()], $_ENV['APP_SECRET']);
+        $user->setApiToken($uuid->jsonSerialize());
         $this->em->flush();
         return $this->json([
             // The getUserIdentifier() method was introduced in Symfony 5.3.
