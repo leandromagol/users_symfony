@@ -32,7 +32,7 @@ class ResetPasswordController extends AbstractFOSRestController
     private $resetPasswordHelper;
     private $resetPasswordRequestRepository;
 
-    public function __construct(ResetPasswordHelperInterface $resetPasswordHelper,ResetPasswordRequestRepository $resetPasswordRequestRepository)
+    public function __construct(ResetPasswordHelperInterface $resetPasswordHelper, ResetPasswordRequestRepository $resetPasswordRequestRepository)
     {
         $this->resetPasswordHelper = $resetPasswordHelper;
         $this->resetPasswordRequestRepository = $resetPasswordRequestRepository;
@@ -56,7 +56,7 @@ class ResetPasswordController extends AbstractFOSRestController
                 $mailer
             );
         }
-        $view = $this->view(['success' => false, 'message' => 'Error on request password reset','data'=>$form], Response::HTTP_BAD_REQUEST);
+        $view = $this->view(['success' => false, 'message' => 'Error on request password reset', 'data' => $form], Response::HTTP_BAD_REQUEST);
         return $this->handleView($view);
     }
 
@@ -142,8 +142,8 @@ class ResetPasswordController extends AbstractFOSRestController
         if (!$user) {
             return $this->checkEmail();
         }
-        $userTokens = $this->resetPasswordRequestRepository->findOneBy(['user'=>$user]);
-        if ($userTokens){
+        $userTokens = $this->resetPasswordRequestRepository->findOneBy(['user' => $user]);
+        if ($userTokens) {
             //Remove previous password reset requested token
             $this->getDoctrine()->getManager()->remove($userTokens);
             $this->getDoctrine()->getManager()->flush();
@@ -155,17 +155,7 @@ class ResetPasswordController extends AbstractFOSRestController
             return $this->checkEmail();
         }
 
-//        $email = (new TemplatedEmail())
-//            ->from(new Address('0b75b45c48-8c20e6@inbox.mailtrap.io', 'mailtrap'))
-//            ->to($user->getEmail())
-//            ->subject('Your password reset request')
-//            ->htmlTemplate('reset_password/email.html.twig')
-//            ->context([
-//                'resetToken' => $resetToken,
-//            ]);
-
-        $this->dispatchMessage(new ResetPasswordNotification($user->getEmail(),$resetToken));
-//        $mailer->send($email);
+        $this->dispatchMessage(new ResetPasswordNotification($user->getEmail(), $resetToken));
 
         return $this->json(
             [
