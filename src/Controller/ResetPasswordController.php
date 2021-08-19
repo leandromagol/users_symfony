@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\ChangePasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
+use App\Message\ResetPasswordNotification;
+use App\Repository\ResetPasswordRequestRepository;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use phpDocumentor\Reflection\Types\This;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -28,10 +30,12 @@ class ResetPasswordController extends AbstractFOSRestController
     use ResetPasswordControllerTrait;
 
     private $resetPasswordHelper;
+    private $resetPasswordRequestRepository;
 
-    public function __construct(ResetPasswordHelperInterface $resetPasswordHelper)
+    public function __construct(ResetPasswordHelperInterface $resetPasswordHelper,ResetPasswordRequestRepository $resetPasswordRequestRepository)
     {
         $this->resetPasswordHelper = $resetPasswordHelper;
+        $this->resetPasswordRequestRepository = $resetPasswordRequestRepository;
     }
 
     /**
@@ -45,7 +49,6 @@ class ResetPasswordController extends AbstractFOSRestController
         $form = $this->createForm(ResetPasswordRequestFormType::class);
         $form->handleRequest($request);
         $form->submit($request->toArray());
-
         if ($form->isSubmitted() && $form->isValid()) {
 
             return $this->processSendingPasswordResetEmail(
@@ -53,7 +56,7 @@ class ResetPasswordController extends AbstractFOSRestController
                 $mailer
             );
         }
-        $view = $this->view(['success' => false, 'message' => 'Error on request password reset'], Response::HTTP_BAD_REQUEST);
+        $view = $this->view(['success' => false, 'message' => 'Error on request password reset','data'=>$form], Response::HTTP_BAD_REQUEST);
         return $this->handleView($view);
     }
 
@@ -134,39 +137,35 @@ class ResetPasswordController extends AbstractFOSRestController
             'email' => $emailFormData,
         ]);
 
+
         // Do not reveal whether a user account was found or not.
         if (!$user) {
             return $this->checkEmail();
+        }
+        $userTokens = $this->resetPasswordRequestRepository->findOneBy(['user'=>$user]);
+        if ($userTokens){
+            //Remove previous password reset requested token
+            $this->getDoctrine()->getManager()->remove($userTokens);
+            $this->getDoctrine()->getManager()->flush();
         }
 
         try {
             $resetToken = $this->resetPasswordHelper->generateResetToken($user);
         } catch (ResetPasswordExceptionInterface $e) {
-            // If you want to tell the user why a reset email was not sent, uncomment
-            // the lines below and change the redirect to 'app_forgot_password_request'.
-            // Caution: This may reveal if a user is registered or not.
-            //
-            // $this->addFlash('reset_password_error', sprintf(
-            //     'There was a problem handling your password reset request - %s',
-            //     $e->getReason()
-            // ));
-
             return $this->checkEmail();
         }
 
-        $email = (new TemplatedEmail())
-            ->from(new Address('0b75b45c48-8c20e6@inbox.mailtrap.io', 'mailtrap'))
-            ->to($user->getEmail())
-            ->subject('Your password reset request')
-            ->htmlTemplate('reset_password/email.html.twig')
-            ->context([
-                'resetToken' => $resetToken,
-            ]);
+//        $email = (new TemplatedEmail())
+//            ->from(new Address('0b75b45c48-8c20e6@inbox.mailtrap.io', 'mailtrap'))
+//            ->to($user->getEmail())
+//            ->subject('Your password reset request')
+//            ->htmlTemplate('reset_password/email.html.twig')
+//            ->context([
+//                'resetToken' => $resetToken,
+//            ]);
 
-        $mailer->send($email);
-
-        // Store the token object in session for retrieval in check-email route.
-        $this->setTokenObjectInSession($resetToken);
+        $this->dispatchMessage(new ResetPasswordNotification($user->getEmail(),$resetToken));
+//        $mailer->send($email);
 
         return $this->json(
             [
