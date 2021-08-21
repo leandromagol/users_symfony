@@ -12,6 +12,11 @@ Para conexão com banco de dados preencha
 ```
 DATABASE_URL=
 ```
+Para conexão com mongodb
+```
+MONGODB_URL=
+MONGODB_DB=
+```
 Para conexão com o servidor de emails
 ```
 MAILER_DSN=
