@@ -1,7 +1,7 @@
 {
     "type": "project",
     "license": "proprietary",
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
         "php": ">=7.2.5",
@@ -9,8 +9,10 @@
         "ext-iconv": "*",
         "composer/package-versions-deprecated": "1.11.99.2",
         "doctrine/annotations": "^1.13",
+        "doctrine/cache": "1.12.1",
         "doctrine/doctrine-bundle": "^2.4",
         "doctrine/doctrine-migrations-bundle": "^3.1",
+        "doctrine/mongodb-odm-bundle": "4.3",
         "doctrine/orm": "^2.9",
         "firebase/php-jwt": "^5.4",
         "friendsofsymfony/rest-bundle": "^3.0",

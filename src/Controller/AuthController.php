@@ -2,8 +2,10 @@
 
 namespace App\Controller;
 
+use App\Document\ApiToken;
 use App\Repository\UserRepository;
 use App\Validators\LoginRequestValidator;
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Firebase\JWT\JWT;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -21,11 +23,13 @@ class AuthController extends AbstractController
 {
     private $userRepository;
     private $em;
+    private $dm;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $em)
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $em,DocumentManager $documentManager)
     {
         $this->userRepository = $userRepository;
         $this->em = $em;
+        $this->dm = $documentManager;
     }
 
     /**
@@ -46,18 +50,21 @@ class AuthController extends AbstractController
         if (!$hasher->isPasswordValid($user, $input['password'])) {
             return new JsonResponse('user or password is incorrect', Response::HTTP_NOT_FOUND);
         }
+
         $now = new \DateTime('NOW');
         $uuid = Uuid::v4();
         $expires_at = new \DateTimeImmutable($now->modify('+60 minutes')->format('Y-m-d H:i:s'));
-        $token = JWT::encode(['username' => $user->getEmail(), 'expires_at' => $expires_at->format('Y-m-d H:i:s'),'api_token'=>$uuid->jsonSerialize()], $_ENV['APP_SECRET']);
-        $user->setApiToken($uuid->jsonSerialize());
-        $this->em->flush();
+        $token = JWT::encode(['username' => $user->getEmail(), '','api_token'=>$uuid->jsonSerialize()], $_ENV['APP_SECRET']);
+        $apitoken = new ApiToken();
+        $apitoken->setToken($token);
+        $apitoken->setExpiresAt($expires_at);
+        $this->dm->persist($apitoken);
+        $this->dm->flush();
         return $this->json([
-            // The getUserIdentifier() method was introduced in Symfony 5.3.
-            // In previous versions it was called getUsername()
             'username' => $user->getUserIdentifier(),
             'roles' => $user->getRoles(),
-            'access_token' => $token
+            'access_token' => $token,
+            'apitoken'=>$apitoken->getId()
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Document\ApiToken;
 use Gedmo\Mapping\Annotation as Gedmo;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -41,12 +42,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @Ignore()
      */
     private $password;
-
-    /**
-     * @ORM\Column(type="string", length=255, unique=true, nullable=true)
-     * @Ignore()
-     */
-    private $apiToken;
 
     /**
      * @var \DateTime $created_at
@@ -158,17 +153,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    public function getApiToken(): ?string
-    {
-        return $this->apiToken;
-    }
-
-    public function setApiToken(string $apiToken): self
-    {
-        $this->apiToken = $apiToken;
-
-        return $this;
-    }
 
     /**
      * @ORM\PrePersist

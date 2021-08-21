@@ -3,6 +3,7 @@
 namespace App\Security;
 
 use App\Helpers\JwtVerify;
+use Doctrine\ODM\MongoDB\DocumentManager;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +17,12 @@ use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPasspor
 
 class ApiKeyAuthenticator extends AbstractAuthenticator
 {
+    private $documentManager;
+    public function __construct(DocumentManager $documentManager)
+    {
+        $this->documentManager = $documentManager;
+    }
+
     public function supports(Request $request): ?bool
     {
         return  $request->getPathInfo() !== '/api/v1/login';
@@ -33,11 +40,13 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
             // Code 401 "Unauthorized"
             throw new CustomUserMessageAuthenticationException('No API token provided');
         }
-        $verify = JwtVerify::ValidJWT($apiToken);
+
+        $verify = JwtVerify::ValidJWT($apiToken,$this->documentManager);
         if (!$verify['success']){
             throw new CustomUserMessageAuthenticationException('API token is'. $verify['status']);
         }
-        return new SelfValidatingPassport(new UserBadge($verify['api_code']));
+
+        return new SelfValidatingPassport(new UserBadge($verify['username']));
     }
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
