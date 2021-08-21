@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use Gedmo\Mapping\Annotation as Gedmo;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -12,6 +13,8 @@ use Symfony\Component\Serializer\Annotation\Ignore;
 /**
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @UniqueEntity("email")
+ * @Gedmo\SoftDeleteable(fieldName="deleted_at", timeAware=false, hardDelete=true)
+ * @ORM\HasLifecycleCallbacks()
  */
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -45,6 +48,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $apiToken;
 
+    /**
+     * @var \DateTime $created_at
+     * @ORM\Column(type="datetime")
+     */
+    private $created_at;
+
+    /**
+     * @var \DateTime $updated_at
+     * @ORM\Column(type="datetime")
+     */
+    private $updated_at;
+
+    /**
+     * @var \DateTime $updated_at
+     * @ORM\Column(type="datetime",nullable=true)
+     */
+    private $deleted_at;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -70,7 +91,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        return (string)$this->email;
     }
 
     /**
@@ -79,7 +100,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUsername(): string
     {
-        return (string) $this->email;
+        return (string)$this->email;
     }
 
     /**
@@ -147,5 +168,53 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->apiToken = $apiToken;
 
         return $this;
+    }
+
+    /**
+     * @ORM\PrePersist
+     * @ORM\PreUpdate
+     */
+    public function updatedTimestamps(): void
+    {
+        $this->setUpdatedAt(new \DateTime('now'));
+        if ($this->getCreatedAt() === null) {
+            $this->setCreatedAt(new \DateTime('now'));
+        }
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getDeletedAt()
+    {
+        return $this->deleted_at;
+    }
+
+    /**
+     * @param \DateTime $deleted_at
+     */
+    public function setDeletedAt(\DateTime $deleted_at): void
+    {
+        $this->deleted_at = $deleted_at;
+    }
+
+    private function getUpdatedAt()
+    {
+        return $this->updated_at;
+    }
+
+    private function setUpdatedAt(\DateTime $param)
+    {
+        $this->updated_at = $param;
+    }
+
+    private function getCreatedAt()
+    {
+        return $this->created_at;
+    }
+
+    private function setCreatedAt(\DateTime $param)
+    {
+        $this->created_at = $param;
     }
 }
