@@ -2,7 +2,6 @@
 
 namespace App\Message;
 
-use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use SymfonyCasts\Bundle\ResetPassword\Model\ResetPasswordToken;
 
 class ResetPasswordNotification

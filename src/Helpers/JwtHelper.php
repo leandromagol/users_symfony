@@ -3,13 +3,14 @@
 namespace App\Helpers;
 
 use App\Document\ApiToken;
+use App\Entity\User;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Firebase\JWT\JWT;
 
- class JwtVerify
+ class JwtHelper
 {
 
-     public static function ValidJWT(string $token,DocumentManager $documentManager)
+     public static function validJWT(string $token,DocumentManager $documentManager)
     {
         $apiToken = $documentManager->getRepository(ApiToken::class)->findOneBy(['token'=>$token]);
         if (!$apiToken){
@@ -27,5 +28,11 @@ use Firebase\JWT\JWT;
             return ['success'=>false,'status' => 'invalid'];
         }
 
+    }
+    public static function generateJwt(User $user): string
+    {
+
+        $token = JWT::encode(['username' => $user->getEmail()], $_ENV['APP_SECRET']);
+        return $token;
     }
 }

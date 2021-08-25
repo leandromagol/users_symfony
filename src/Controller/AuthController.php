@@ -2,19 +2,17 @@
 
 namespace App\Controller;
 
-use App\Document\ApiToken;
+use App\Helpers\Factories\ApiTokenFactory;
+use App\Helpers\JwtHelper;
 use App\Repository\UserRepository;
-use App\Validators\LoginRequestValidator;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Firebase\JWT\JWT;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * @Route("/api/v1")
@@ -24,12 +22,14 @@ class AuthController extends AbstractController
     private $userRepository;
     private $em;
     private $dm;
+    private $apiTokenFactory;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $em,DocumentManager $documentManager)
+    public function __construct(UserRepository $userRepository, EntityManagerInterface $em,DocumentManager $documentManager,ApiTokenFactory $apiTokenFactory)
     {
         $this->userRepository = $userRepository;
         $this->em = $em;
         $this->dm = $documentManager;
+        $this->apiTokenFactory = $apiTokenFactory;
     }
 
     /**
@@ -52,19 +52,15 @@ class AuthController extends AbstractController
         }
 
         $now = new \DateTime('NOW');
-        $uuid = Uuid::v4();
         $expires_at = new \DateTimeImmutable($now->modify('+60 minutes')->format('Y-m-d H:i:s'));
-        $token = JWT::encode(['username' => $user->getEmail(), '','api_token'=>$uuid->jsonSerialize()], $_ENV['APP_SECRET']);
-        $apitoken = new ApiToken();
-        $apitoken->setToken($token);
-        $apitoken->setExpiresAt($expires_at);
-        $this->dm->persist($apitoken);
+        $token = JwtHelper::generateJwt($user);
+        $api_token =$this->apiTokenFactory->buildApiToken($token,$expires_at);
+        $this->dm->persist($api_token);
         $this->dm->flush();
         return $this->json([
             'username' => $user->getUserIdentifier(),
             'roles' => $user->getRoles(),
             'access_token' => $token,
-            'apitoken'=>$apitoken->getId()
         ]);
     }
 }

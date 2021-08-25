@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Document\ApiToken;
 use Gedmo\Mapping\Annotation as Gedmo;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;

@@ -2,17 +2,14 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
 use App\Form\Type\UserType;
 use App\Helpers\Factories\UserFactory;
 use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
-use function Symfony\Component\String\u;
 
 /**
  * @Route("/api/v1")
@@ -20,13 +17,12 @@ use function Symfony\Component\String\u;
 class UserController extends AbstractFOSRestController
 {
     private $userRepository;
-    private $em;
     private $userFactory;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $em, UserFactory $userFactory)
+    public function __construct(UserRepository $userRepository, UserFactory $userFactory)
     {
         $this->userRepository = $userRepository;
-        $this->em = $em;
+
         $this->userFactory = $userFactory;
     }
 
@@ -36,7 +32,11 @@ class UserController extends AbstractFOSRestController
     public function index(): Response
     {
         $user = $this->userRepository->findAll();
-        $view = $this->view(['success' => true, 'message' => 'User retrieved successfully', 'data' => $user], Response::HTTP_OK);
+        $view = $this->view([
+            'success' => true,
+            'message' => 'User retrieved successfully',
+            'data' => $user
+        ], Response::HTTP_OK);
         return $this->handleView($view);
     }
 
@@ -58,8 +58,7 @@ class UserController extends AbstractFOSRestController
         }
 
         $user = $this->userFactory->BuildUser($body);
-        $this->em->persist($user);
-        $this->em->flush();
+        $this->userRepository->store($user);
         $view = $this->view(['success' => true, 'data' => ['message' => 'User saved successfully']], Response::HTTP_OK);
         return $this->handleView($view);
     }
@@ -73,7 +72,11 @@ class UserController extends AbstractFOSRestController
         if (!$user) {
             throw new ResourceNotFoundException("User not found");
         }
-        $view = $this->view(['success' => true, 'message' => 'User retrieved successfully', 'data' => $user], Response::HTTP_OK, []);
+        $view = $this->view([
+            'success' => true,
+            'message' => 'User retrieved successfully',
+            'data' => $user
+        ], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 
@@ -99,11 +102,16 @@ class UserController extends AbstractFOSRestController
             return $this->handleView($view);
         }
         $userUpdated = $this->userFactory->BuildUser($body);
-        if($userUpdated->getRoles())$user->setRoles($userUpdated->getRoles());
+        if ($userUpdated->getRoles()) $user->setRoles($userUpdated->getRoles());
         $user->setEmail($userUpdated->getEmail());
         $user->setPassword($userUpdated->getPassword());
-        $this->em->flush();
-        $view = $this->view(['success' => true, 'message' => 'User updated successfully', 'data' => $user], Response::HTTP_OK, []);
+        $this->userRepository->store($user);
+        $view = $this->view(
+            [
+                'success' => true,
+                'message' => 'User updated successfully',
+                'data' => $user
+            ], Response::HTTP_OK, []);
         return $this->handleView($view);
     }
 
@@ -116,8 +124,7 @@ class UserController extends AbstractFOSRestController
         if (!$user) {
             throw new ResourceNotFoundException("User not found");
         }
-        $this->em->remove($user);
-        $this->em->flush();
+        $this->userRepository->delete($user);
         $view = $this->view(['success' => true, 'message' => 'User removed successfully'], Response::HTTP_OK, []);
         return $this->handleView($view);
     }

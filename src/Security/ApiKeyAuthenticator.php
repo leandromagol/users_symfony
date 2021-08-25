@@ -2,7 +2,7 @@
 
 namespace App\Security;
 
-use App\Helpers\JwtVerify;
+use App\Helpers\JwtHelper;
 use Doctrine\ODM\MongoDB\DocumentManager;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +41,7 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
             throw new CustomUserMessageAuthenticationException('No API token provided');
         }
 
-        $verify = JwtVerify::ValidJWT($apiToken,$this->documentManager);
+        $verify = JwtHelper::ValidJWT($apiToken,$this->documentManager);
         if (!$verify['success']){
             throw new CustomUserMessageAuthenticationException('API token is'. $verify['status']);
         }
